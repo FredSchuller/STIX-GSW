@@ -77,10 +77,192 @@ subc_str = subc_str[subc_index]
 
 ;;************** Define (u,v) points
 
-; take average of front and rear grid pitches (mm)
-pitch = (subc_str.front.pitch + subc_str.rear.pitch) / 2.0d
-; take average of front and rear grid orientation
-orientation = (subc_str.front.angle + subc_str.rear.angle) / 2.0d
+pitch = fltarr(n_elements(subc_str.det_n))
+orientation = fltarr(n_elements(subc_str.det_n))
+restore,loc_file( 'grid_temp.sav', path = getenv('STX_GRID') )
+fff=read_ascii(loc_file( 'grid_param_front.txt', path = getenv('STX_GRID') ),temp=grid_temp)
+rrr=read_ascii(loc_file( 'grid_param_rear.txt', path = getenv('STX_GRID') ),temp=grid_temp)
+
+for i=0,n_elements(subc_str.det_n)-1 do begin
+  if ((subc_str[i].det_n ne 12) and (subc_str[i].det_n ne 17) and (subc_str[i].det_n ne 19) and (subc_str[i].det_n ne 11) and (subc_str[i].det_n ne 13) and (subc_str[i].det_n ne 18)) then begin
+    ;pitch[i] = (subc_str[i].front.pitch - 0.001 + subc_str[i].rear.pitch - 0.001) / 2.0d
+    pitch[i] = (subc_str[i].front.pitch + subc_str[i].rear.pitch) / 2.0d
+    ; take average of front and rear grid orientation
+    orientation[i] = (subc_str[i].front.angle + subc_str[i].rear.angle) / 2.0d
+  endif else begin
+  if subc_str[i].det_n eq 12 then begin
+      index_subc_12 = where(fff.sc eq 12)
+      ; Please note that here the phases in multiple layers grids is in mm, it is not the phase w.r.t. the detector center
+      two_layers_values_front = stx_double_layers_grid_values(fff.p[index_subc_12[0]],     $  ; pitch
+                                                              fff.p[index_subc_12[1]],     $
+                                                              fff.slit[index_subc_12[0]],  $  ; slit
+                                                              fff.slit[index_subc_12[1]],  $
+                                                              fff.o[index_subc_12[0]],    $  ; orientation
+                                                              fff.o[index_subc_12[1]],    $
+                                                              fff.phase[index_subc_12[0]], $  ; phase
+                                                              fff.phase[index_subc_12[1]])
+
+      two_layers_values_rear = stx_double_layers_grid_values(rrr.p[index_subc_12[0]],      $  ; pitch
+                                                              rrr.p[index_subc_12[1]],     $
+                                                              rrr.slit[index_subc_12[0]],  $  ; slit
+                                                              rrr.slit[index_subc_12[1]],  $
+                                                              rrr.o[index_subc_12[0]],     $  ; orientation
+                                                              rrr.o[index_subc_12[1]],     $
+                                                              rrr.phase[index_subc_12[0]], $  ; phase
+                                                              rrr.phase[index_subc_12[1]])
+
+      pitch[i] = (two_layers_values_front.pitch + two_layers_values_rear.pitch) / 2.0d
+      orientation[i] = (two_layers_values_front.orientation + two_layers_values_rear.orientation) / 2.0d
+    endif
+    if subc_str[i].det_n eq 17 then begin
+      index_subc_17 = where(fff.sc eq 17)
+      ; Please note that here the phases in multiple layers grids is in mm, it is not the phase w.r.t. the detector center
+      two_layers_values_front = stx_double_layers_grid_values(fff.p[index_subc_17[0]],    $  ; pitch
+                                                              fff.p[index_subc_17[1]],    $
+                                                              fff.slit[index_subc_17[0]],  $  ; slit
+                                                              fff.slit[index_subc_17[1]],  $
+                                                              fff.o[index_subc_17[0]],     $  ; orientation
+                                                              fff.o[index_subc_17[1]],     $
+                                                              fff.phase[index_subc_17[0]], $  ; phase
+                                                              fff.phase[index_subc_17[1]])
+
+      two_layers_values_rear = stx_double_layers_grid_values(rrr.p[index_subc_17[0]],      $  ; pitch
+                                                              rrr.p[index_subc_17[1]],     $
+                                                              rrr.slit[index_subc_17[0]],  $  ; slit
+                                                              rrr.slit[index_subc_17[1]],  $
+                                                              rrr.o[index_subc_17[0]],     $  ; orientation
+                                                              rrr.o[index_subc_17[1]],     $
+                                                              rrr.phase[index_subc_17[0]], $  ; phase
+                                                              rrr.phase[index_subc_17[1]])
+
+      pitch[i] = (two_layers_values_front.pitch + two_layers_values_rear.pitch) / 2.0d
+      orientation[i] = (two_layers_values_front.orientation + two_layers_values_rear.orientation) / 2.0d
+    endif
+    if subc_str[i].det_n eq 19 then begin
+      index_subc_19 = where(fff.sc eq 19)
+      ; Please note that here the phases in multiple layers grids is in mm, it is not the phase w.r.t. the detector center
+      two_layers_values_front = stx_double_layers_grid_values(fff.p[index_subc_19[0]],     $  ; pitch
+                                                              fff.p[index_subc_19[1]],     $
+                                                              fff.slit[index_subc_19[0]],  $ ;-0.004,  $  ; slit
+                                                              fff.slit[index_subc_19[1]],  $ ;-0.004,  $
+                                                              fff.o[index_subc_19[0]],     $  ; orientation
+                                                              fff.o[index_subc_19[1]],     $
+                                                              fff.phase[index_subc_19[0]], $  ; phase
+                                                              fff.phase[index_subc_19[1]])
+
+      two_layers_values_rear = stx_double_layers_grid_values(rrr.p[index_subc_19[0]],      $  ; pitch
+                                                              rrr.p[index_subc_19[1]],     $
+                                                              rrr.slit[index_subc_19[0]],  $ ;  -0.004,  $  ; slit
+                                                              rrr.slit[index_subc_19[1]],  $ ;-0.004,  $
+                                                              rrr.o[index_subc_19[0]],     $  ; orientation
+                                                              rrr.o[index_subc_19[1]],     $
+                                                              rrr.phase[index_subc_19[0]], $  ; phase
+                                                              rrr.phase[index_subc_19[1]])
+
+      pitch[i] = (two_layers_values_front.pitch + two_layers_values_rear.pitch) / 2.0d
+      orientation[i] = (two_layers_values_front.orientation + two_layers_values_rear.orientation) / 2.0d
+    endif
+    if subc_str[i].det_n eq 11 then begin
+      index_subc_11 = where(fff.sc eq 11)
+      ; Please note that here the phases in multiple layers grids is in mm, it is not the phase w.r.t. the detector center
+      three_layers_values_front = stx_triple_layers_grid_values(fff.p[index_subc_11[0]],     $  ; pitch
+                                                                fff.p[index_subc_11[1]],     $
+                                                                fff.p[index_subc_11[2]],     $
+                                                                fff.slit[index_subc_11[0]],  $  ; slit
+                                                                fff.slit[index_subc_11[1]],  $
+                                                                fff.slit[index_subc_11[2]],  $
+                                                                fff.o[index_subc_11[0]],    $  ; orientation
+                                                                fff.o[index_subc_11[1]],    $
+                                                                fff.o[index_subc_11[2]],   $
+                                                                fff.phase[index_subc_11[0]], $  ; phase
+                                                                fff.phase[index_subc_11[1]], $
+                                                                fff.phase[index_subc_11[2]])
+
+      three_layers_values_rear = stx_triple_layers_grid_values(rrr.p[index_subc_11[0]],     $  ; pitch
+                                                               rrr.p[index_subc_11[1]],     $
+                                                               rrr.p[index_subc_11[2]],     $
+                                                               rrr.slit[index_subc_11[0]],  $  ; slit
+                                                               rrr.slit[index_subc_11[1]],  $
+                                                               rrr.slit[index_subc_11[2]],  $
+                                                               rrr.o[index_subc_11[0]],    $  ; orientation
+                                                               rrr.o[index_subc_11[1]],    $
+                                                               rrr.o[index_subc_11[2]],    $
+                                                               rrr.phase[index_subc_11[0]], $  ; phase
+                                                               rrr.phase[index_subc_11[1]], $
+                                                               rrr.phase[index_subc_11[2]])
+
+      pitch[i] = (three_layers_values_front.pitch + three_layers_values_rear.pitch) / 2.0d
+      orientation[i] = (three_layers_values_rear.orientation + three_layers_values_rear.orientation) / 2.0d
+    endif
+    if subc_str[i].det_n eq 13 then begin
+      index_subc_13 = where(fff.sc eq 13)
+      ; Please note that here the phases in multiple layers grids is in mm, it is not the phase w.r.t. the detector center
+      three_layers_values_front = stx_triple_layers_grid_values(fff.p[index_subc_13[0]],     $  ; pitch
+                                                                fff.p[index_subc_13[1]],     $
+                                                                fff.p[index_subc_13[2]],     $
+                                                                fff.slit[index_subc_13[0]],  $  ; slit
+                                                                fff.slit[index_subc_13[1]],  $
+                                                                fff.slit[index_subc_13[2]],  $
+                                                                fff.o[index_subc_13[0]],    $  ; orientation
+                                                                fff.o[index_subc_13[1]],    $
+                                                                fff.o[index_subc_13[2]],    $
+                                                                fff.phase[index_subc_13[0]], $  ; phase
+                                                                fff.phase[index_subc_13[1]], $
+                                                                fff.phase[index_subc_13[2]])
+
+      three_layers_values_rear = stx_triple_layers_grid_values(rrr.p[index_subc_13[0]],     $  ; pitch
+                                                               rrr.p[index_subc_13[1]],     $
+                                                               rrr.p[index_subc_13[2]],     $
+                                                               rrr.slit[index_subc_13[0]],  $  ; slit
+                                                               rrr.slit[index_subc_13[1]],  $
+                                                               rrr.slit[index_subc_13[2]],  $
+                                                               rrr.o[index_subc_13[0]],    $  ; orientation
+                                                               rrr.o[index_subc_13[1]],    $
+                                                               rrr.o[index_subc_13[2]],    $
+                                                               rrr.phase[index_subc_13[0]], $  ; phase
+                                                               rrr.phase[index_subc_13[1]], $
+                                                               rrr.phase[index_subc_13[2]])
+
+      pitch[i] = (three_layers_values_front.pitch + three_layers_values_rear.pitch) / 2.0d
+      orientation[i] = (three_layers_values_rear.orientation + three_layers_values_rear.orientation) / 2.0d
+    endif
+    if subc_str[i].det_n eq 18 then begin
+      index_subc_18 = where(fff.sc eq 18)
+      ; Please note that here the phases in multiple layers grids is in mm, it is not the phase w.r.t. the detector center
+      three_layers_values_front = stx_triple_layers_grid_values(fff.p[index_subc_18[0]],     $  ; pitch
+                                                                fff.p[index_subc_18[1]],     $
+                                                                fff.p[index_subc_18[2]],     $
+                                                                fff.slit[index_subc_18[0]],  $  ; slit
+                                                                fff.slit[index_subc_18[1]],  $
+                                                                fff.slit[index_subc_18[2]],  $
+                                                                fff.o[index_subc_18[0]],    $  ; orientation
+                                                                fff.o[index_subc_18[1]],    $
+                                                                fff.o[index_subc_18[2]],    $
+                                                                fff.phase[index_subc_18[0]], $  ; phase
+                                                                fff.phase[index_subc_18[1]], $
+                                                                fff.phase[index_subc_18[2]])
+
+      three_layers_values_rear = stx_triple_layers_grid_values(rrr.p[index_subc_18[0]],     $  ; pitch
+                                                               rrr.p[index_subc_18[1]],     $
+                                                               rrr.p[index_subc_18[2]],     $
+                                                               rrr.slit[index_subc_18[0]],  $  ; slit
+                                                               rrr.slit[index_subc_18[1]],  $
+                                                               rrr.slit[index_subc_18[2]],  $
+                                                               rrr.o[index_subc_18[0]],    $  ; orientation
+                                                               rrr.o[index_subc_18[1]],    $
+                                                               rrr.o[index_subc_18[2]],    $
+                                                               rrr.phase[index_subc_18[0]], $  ; phase
+                                                               rrr.phase[index_subc_18[1]], $
+                                                               rrr.phase[index_subc_18[2]])
+
+      pitch[i] = (three_layers_values_front.pitch + three_layers_values_rear.pitch) / 2.0d
+      orientation[i] = (three_layers_values_rear.orientation + three_layers_values_rear.orientation) / 2.0d
+    endif
+  endelse
+
+endfor
+  
+  
 ; convert pitch from mm to arcsec
 pitch = pitch / f2r_sep * 3600.0d * !RADEG
 ; calculate u and v

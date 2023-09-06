@@ -92,6 +92,8 @@ default, subc_index, stx_label2ind(['10a','10b','10c','9a','9b','9c','8a','8b','
 default, sumcase, "TOP+BOT"
 default, no_rcr_check, 0
 
+orange_plastic = read_csv(loc_file( 'stix_trans_by_component.csv', path = getenv('STX_GRID')), n_table_header = 1)
+
 if anytim(time_range[0]) gt anytim(time_range[1]) then message, "Start time is greater than end time"
 if energy_range[0] gt energy_range[1] then message, "Energy range lower edge is greater than the higher edge"
 
@@ -184,8 +186,8 @@ if ~silent then begin
 
 endif
 
-;;************** Sum counts (and related errors) in time
 
+;;************** Sum counts (and related errors) in time
 ;; Dimensions: [energy,pixel,detector,time]
 counts       = data.COUNTS
 counts_error = data.COUNTS_ERR
@@ -202,8 +204,13 @@ endif else begin
   
 endelse
 
-;;************** Sum counts (and related errors) in energy
 
+;;************** Sum counts (and related errors) in detectors (3-10) and pixels
+;; Goal: correction for the transmissions of orange plastic, considering the shape of counts spectrum.
+counts_energy = total(counts, 2)
+counts_energy = total(counts_energy[*,0:9],2) + total(counts_energy[*,13:15],2) + total(counts_energy[*,19:-1],2)
+
+;;************** Sum counts (and related errors) in energy
 ;; Exclude first and last energy bins (below 4 keV and over 150 keV)
 counts       = counts[1:30,*,*]
 counts_error = counts_error[1:30,*,*]
@@ -216,6 +223,45 @@ if keyword_set(path_bkg_file) then begin
   counts_error_bkg = counts_error_bkg[1:30,*,*]
 
 endif
+
+
+;**************** orange plastic correction for grids 2&1 ****************
+vect_val = []
+;if energy_range[1] lt 15 then begin
+
+  for kk=2,n_elements(energy_low)-3 do begin
+  
+    index_energy = where((orange_plastic.field9 gt energy_low[kk]-1) and (orange_plastic.field9 lt energy_low[kk]+2))
+    index_energy2 = where((orange_plastic.field9 gt energy_low[kk]) and (orange_plastic.field9 lt energy_low[kk]+1))
+  ;  inter_spectrum = SPLINE([energy_low[kk]-1,energy_low[kk],energy_low[kk]+1,energy_low[kk]+2],$
+  ;                            counts_energy[kk-1:kk+2],orange_plastic.field9[index_energy])
+    inter_spectrum = SPLINE([energy_low[kk-1],energy_low[kk],energy_low[kk+1],energy_low[kk+2]],$
+                              counts_energy[kk-1:kk+2],orange_plastic.field9[index_energy])
+    deltax = [orange_plastic.field9[index_energy2[1]] - (ceil(orange_plastic.field9[index_energy2[0]])-1),$
+               orange_plastic.field9[index_energy2[2]] - orange_plastic.field9[index_energy2[0]], $
+               orange_plastic.field9[index_energy2[3]] - orange_plastic.field9[index_energy2[1]], $
+               orange_plastic.field9[index_energy2[4]] - orange_plastic.field9[index_energy2[2]], $
+               orange_plastic.field9[index_energy2[5]] - orange_plastic.field9[index_energy2[3]], $
+               ceil(orange_plastic.field9[index_energy2[0]]) - orange_plastic.field9[index_energy2[4]]]
+    
+    values = total(inter_spectrum[7:13] * orange_plastic.field3[index_energy2] * deltax) / total(inter_spectrum[7:13] * deltax)
+    counts[kk,*,10:12] /=  values
+    counts[kk,*,16:18] /=  values
+    counts_error[kk,*,10:12] /=  values
+    counts_error[kk,*,16:18] /=  values
+  
+    vect_val = [[vect_val], [values]]
+    if keyword_set(path_bkg_file) then begin
+      counts_bkg[kk,*,10:12]  /=  values
+      counts_bkg[kk,*,16:18] /=  values
+      counts_error_bkg[kk,*,10:12]  /=  values
+      counts_error_bkg[kk,*,16:18]  /=  values
+    endif
+  
+  endfor
+
+;endif
+
 
 ;; Compute elut correction (if 'elut_corr' is set) - Correct just the first and the last energy bins (flat spectrum is assumed)
 if elut_corr then begin
@@ -304,10 +350,10 @@ if keyword_set(xy_flare) then begin
   subc_transmission     = stx_subc_transmission(xy_flare)
   subc_transmission_bkg = stx_subc_transmission([0.,0.])
   for i=0,31 do begin
-    
-    counts[*,i]       = counts[*,i]/subc_transmission[i]*0.25
-    counts_error[*,i] = counts_error[*,i]/subc_transmission[i]*0.25
-
+    if (i ne 8) and (i ne 9) then begin
+      counts[*,i]       = counts[*,i]/subc_transmission[i]*0.25
+      counts_error[*,i] = counts_error[*,i]/subc_transmission[i]*0.25      
+    endif
   endfor
 
 endif

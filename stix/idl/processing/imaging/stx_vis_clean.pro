@@ -327,8 +327,9 @@ function stx_vis_clean, vis, aux_data, niter = niter, image_dim = image_dim_in, 
   dirty_map = [[[dmap0]], [[dmap]]] ;original dirty map first, last unscaled dirty map second
   ;clean_image=clean_map + resid_map
   ;Säm: TBD, but it seems to me that there is no need to convolve the residual map with the clean beam. for now I use clean_map+resid_map
-  ;clean_image = noresid ? clean_map : clean_map + convol( resid_map, clean_beam, /norm, /center, /edge_zero)
-  clean_image=clean_map+resid_map
+  clean_image = noresid ? clean_map : clean_map + convol( resid_map, clean_beam, /norm, /center, /edge_zero)
+  resid_map = convol( resid_map, clean_beam, /norm, /center, /edge_zero)
+  ;clean_image=clean_map+resid_map
 
   info_struct = { $
     image: clean_image, $

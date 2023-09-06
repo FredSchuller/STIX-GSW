@@ -65,6 +65,21 @@ modulation_efficiency = !pi^3./(8.*sqrt(2.))
 tmp = read_csv(loc_file( 'GridCorrection.csv', path = getenv('STX_VIS_PHASE') ), header=header, table_header=tableheader, n_table_header=2 )
 grid_phase_corr = tmp.field2[vis.ISC - 1]; * (-vis.phase_sense)
 
+if ((where(vis.isc eq 12) ne -1) or (where(vis.isc eq 17) ne -1) or (where(vis.isc eq 19) ne -1)) then begin
+  ; computed by Matej's measurements including the m-factor, as for sub-collimators 3-10
+  grid_phase_corr[where(vis.isc eq 12)] = -22.0
+  grid_phase_corr[where(vis.isc eq 17)] = 33.9
+  grid_phase_corr[where(vis.isc eq 19)] = -55.6
+endif
+
+if ((where(vis.isc eq 11) ne -1) or (where(vis.isc eq 13) ne -1) or (where(vis.isc eq 18) ne -1)) then begin
+  ; computed by Matej's measurements including the m-factor, as for sub-collimators 3-10
+  grid_phase_corr[where(vis.isc eq 11)] = -274.141
+  grid_phase_corr[where(vis.isc eq 13)] = +319.673
+  grid_phase_corr[where(vis.isc eq 18)] = -219.794
+endif
+
+
 ;; Projection correction factor
 xy_flare = vis[0].XY_FLARE
 phase_proj_corr  = fltarr(n_vis)
@@ -77,6 +92,22 @@ endif
 ;; "Ad hoc" phase correction (for removing residual errors)
 tmp = read_csv(loc_file( 'PhaseCorrFactors.csv', path = getenv('STX_VIS_PHASE')), header=header, table_header=tableheader, n_table_header=3 )
 ad_hoc_phase_corr = tmp.field2[vis.ISC - 1]; * (-vis.phase_sense)
+;; twist correction
+if ((where(vis.isc eq 12) ne -1) or (where(vis.isc eq 17) ne -1) or (where(vis.isc eq 19) ne -1)) then begin
+  ; computed by PhaseTwist in Gordon’s "Grid2GridTwist.xlsx" file, multiplied by 0.38 (for the linear relationship found
+  ; between adhoc phase correction versus the relative grid torsion factor)
+  ad_hoc_phase_corr[where(vis.isc eq 12)] = -30.8
+  ad_hoc_phase_corr[where(vis.isc eq 17)] = 54.64
+  ad_hoc_phase_corr[where(vis.isc eq 19)] = -15.5
+endif
+
+if ((where(vis.isc eq 11) ne -1) or (where(vis.isc eq 13) ne -1) or (where(vis.isc eq 18) ne -1)) then begin
+  ; computed by PhaseTwist in Gordon’s "Grid2GridTwist.xlsx" file, multiplied by 0.38 (for the linear relationship found
+  ; between adhoc phase correction versus the relative grid torsion factor)
+  ad_hoc_phase_corr[where(vis.isc eq 11)] = 73.2
+  ad_hoc_phase_corr[where(vis.isc eq 13)] = 13.1
+  ad_hoc_phase_corr[where(vis.isc eq 18)] = 52.3
+endif
 
 ;; Mapcenter correction
 phase_mapcenter_corr = -2 * !pi * (vis.XYOFFSET[0] * vis.U + vis.XYOFFSET[1] * vis.V ) * !radeg
