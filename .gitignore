@@ -37,3 +37,9 @@ stx_scenario_*
 /*.pro
 /*.xml
 /*.fits
+
+# ...
+.project
+stix/idl/fred
+stix/idl/demo
+stix/dbase/demo
