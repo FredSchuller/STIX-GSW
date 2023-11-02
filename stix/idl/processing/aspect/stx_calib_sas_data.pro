@@ -7,7 +7,7 @@
 ; Syntax      : stx_calib_sas_data, data , calibfile  [, factor=factor ]
 ;
 ; Inputs      :
-;   data      = a structure as returned by read_hk_data
+;   data      = a structure as returned by prepare_aspect_data
 ;   calibfile = name of the file with calibration parameters (gains and bias values), including full absolute path
 ;
 ; Output      : The input structure is modified
@@ -50,7 +50,7 @@ pro stx_calib_sas_data, data, calibfile, factor=factor
   if nb_ok lt nb_rows then begin
     print,nb_rows - nb_ok,format='(" CALIB_SAS_DATA Warning: Found",I5," entries with wrong duration.")'
     ind_bad = where(abs(data.duration-64.) ge 0.5,nb_bad)
-    for i=0,nb_bad-1 do data[ind_bad[i]].ERROR = "SAS_DATA_WRONG_DURATION"
+    for i=0,nb_bad-1 do data[ind_bad[i]].ERROR = "SAS_WRONG_DUR"
   endif
   data[ind_ok].CHA_DIODE0 = (data[ind_ok].CHA_DIODE0 / 16. - V_base) / R_m
   data[ind_ok].CHA_DIODE1 = (data[ind_ok].CHA_DIODE1 / 16. - V_base) / R_m
