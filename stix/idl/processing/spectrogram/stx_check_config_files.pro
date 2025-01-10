@@ -138,6 +138,7 @@ end
 ; :history:
 ;    31-Aug-2023 - ECMD (Graz), initial release
 ;    22-Jan-2024 - Use Dominic Zarro's <idlneturl2> __define in place of out of box IDL idlneturl
+;    2025-01-10, F. Schuller (AIP): test if STX_DET directory is writable, otherwise use local user dir
 ;
 ;-
 pro stx_check_config_files, directory, verbose = verbose
@@ -164,8 +165,16 @@ pro stx_check_config_files, directory, verbose = verbose
         readcol, find_version_file, current_version, format = 'a', /silent
        if current_version eq online_version then print,'STIX Configuration files are already up to date ' + online_version else run_update =  1 
       endif else run_update =  1 
-      
+
     if run_update then begin
+      ; test if user has write permission to that directory, otherwise use local directory
+      tst = file_test(directory, /dir, /write)
+      if ~tst then begin
+        directory = app_user_dir('ssw', 'Solar Software', 'stix', 'STIX Ground Software', '', 1)
+        ; also update envirnoment variable, so that other STIX-GSW procedures can find the files
+        ; that will now be updated
+        setenv, 'STX_DET='+directory
+      endif
 
       stx_update_elut, directory, verbose = verbose
       stx_update_echan, directory, verbose = verbose
