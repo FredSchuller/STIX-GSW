@@ -30,6 +30,7 @@
 ;   23-Oct-2023 - ECMD (Graz), include specification of flare location
 ;   05-Feb-2024 - ECMD (Graz), files now downloaded using UID and stx_get_science_fits_file.pro
 ;   11-Nov-2024 - Massa P. (FHNW), changed "" with '' for string definition
+;   2025-01-10, F. Schuller (AIP): add a test that out_dir exists and is writable
 ;
 ;-
 pro stx_ospex_spectroscopy_demo, out_dir = out_dir
@@ -47,6 +48,9 @@ pro stx_ospex_spectroscopy_demo, out_dir = out_dir
   if ~file_test(out_dir, /directory) then begin
     file_mkdir, out_dir
   endif
+  ; But if it's not writable, then use a local, user-specific directory
+  tst = file_test(out_dir, /dir, /write)
+  if ~tst then out_dir = app_user_dir('ssw', 'Solar Software', 'ospex', 'OSPEX - Object Spectral Analysis Executive', '', 1)
 
   ;As an example a spectrogram file for a flare on 8th February 2022 is used
   uid_spec_file = '2202080003'

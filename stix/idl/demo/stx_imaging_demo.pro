@@ -18,14 +18,17 @@
 ;   23-august-2022, Massa P., made compatible with the up-to-date imaging sofwtare
 ;   11-september-2023 - ECMD (Graz), allow user to specify output directory
 ;   11-january-2024 - Massa P., use 'stx_get_science_fits_file' and 'stx_get_ephemeris_file' to download fits files
-;   11-november-2024 - Massa P., change "" to '' for string definition. 
+;   11-november-2024 - Massa P., change "" to '' for string definition.
+;   2025-01-10, F. Schuller (AIP): add a test that out_dir exists and is writable
 ;-
 
 ;;******************************** LOAD DATA - June 7 2020, 21:41 UT ********************************
 
 ; Folder in which the files downloaded for this demonstration are stored
  default, out_dir, concat_dir( getenv('STX_DEMO_DATA'),'imaging', /d)
-
+ tst = file_test(out_dir, /dir, /write)
+ if ~tst then out_dir = app_user_dir('ssw', 'Solar Software', 'stix', 'STIX Ground Software', '', 1)
+ 
 ; UID of the science fits file to be dowloaded from the website
 uid_sci_file = '1178428688'
 path_sci_file = stx_get_science_fits_file(uid_sci_file, out_dir=out_dir)
