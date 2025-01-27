@@ -27,7 +27,11 @@
 ; Folder in which the files downloaded for this demonstration are stored
  default, out_dir, concat_dir( getenv('STX_DEMO_DATA'),'imaging', /d)
  tst = file_test(out_dir, /dir, /write)
- if ~tst then out_dir = app_user_dir('ssw', 'Solar Software', 'stix', 'STIX Ground Software', '', 1)
+ if ~tst then begin
+  ssw_dir = strjoin([home_dir(),'.ssw', 'so', 'stix'], path_sep())
+  if ~file_test(ssw_dir, /dir, /write) then file_mkdir, ssw_dir
+  out_dir = ssw_dir
+ endif
  
 ; UID of the science fits file to be dowloaded from the website
 uid_sci_file = '1178428688'
