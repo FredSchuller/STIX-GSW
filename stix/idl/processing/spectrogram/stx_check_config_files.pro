@@ -138,6 +138,7 @@ end
 ; :history:
 ;    31-Aug-2023 - ECMD (Graz), initial release
 ;    22-Jan-2024 - Use Dominic Zarro's <idlneturl2> __define in place of out of box IDL idlneturl
+;    2025-01-10, F. Schuller (AIP): test if STX_DET directory is writable, otherwise use local user dir
 ;
 ;-
 pro stx_check_config_files, directory, verbose = verbose
@@ -161,18 +162,42 @@ pro stx_check_config_files, directory, verbose = verbose
       online_version = ourl->get(/string)
       
      if find_version_file ne '' then begin
-        readcol, find_version_file, current_version, format = 'a', /silent
-       if current_version eq online_version then print,'STIX Configuration files are already up to date ' + online_version else run_update =  1 
-      endif else run_update =  1 
-      
+       readcol, find_version_file, current_version, format = 'a', /silent
+       if current_version eq online_version then print,'STIX Configuration files are already up to date ' + online_version $
+          else run_update =  1
+     endif else run_update =  1
+
     if run_update then begin
+      ; test if user has write permission to that directory, otherwise use local directory
+      tst = file_test(directory, /dir, /write)
+      if ~tst then begin
+        ssw_dir = strjoin([home_dir(),'.ssw', 'so', 'stix'], path_sep())
+        if ~file_test(ssw_dir, /dir, /write) then file_mkdir, ssw_dir
+        directory = ssw_dir
+        ; also update envirnoment variable, so that other STIX-GSW procedures can find the files
+        ; that will now be updated
+        setenv, 'STX_DET='+directory
+        ; also update path to version file
+        version_file = concat_dir(directory, 'stix_conf_version.txt')
+        ; check again whether local version of config files is already up-to-date
+        find_version_file = loc_file(version_file)
+        if find_version_file ne '' then begin
+          readcol, find_version_file, current_version, format = 'a', /silent
+          if current_version eq online_version then begin
+            print,'STIX Configuration files are already up to date ' + online_version
+            run_update = 0
+          endif
+        endif
+      endif
 
-      stx_update_elut, directory, verbose = verbose
-      stx_update_echan, directory, verbose = verbose
-
-      ;update version file
-      str2file, online_version, version_file
+      if run_update then begin
+        message, "Downloading elut_table files...", /continue
+        stx_update_elut, directory, verbose = verbose
+        message, "Downloading ScienceEnergyChannels files...", /continue
+        stx_update_echan, directory, verbose = verbose
+        ;update version file
+        str2file, online_version, version_file
+      endif
     endif
   endelse
-
 end

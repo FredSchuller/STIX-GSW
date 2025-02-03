@@ -30,6 +30,7 @@
 ;   23-Oct-2023 - ECMD (Graz), include specification of flare location
 ;   05-Feb-2024 - ECMD (Graz), files now downloaded using UID and stx_get_science_fits_file.pro
 ;   11-Nov-2024 - Massa P. (FHNW), changed "" with '' for string definition
+;   2025-01-10, F. Schuller (AIP): add a test that out_dir exists and is writable
 ;
 ;-
 pro stx_ospex_spectroscopy_demo, out_dir = out_dir
@@ -44,9 +45,14 @@ pro stx_ospex_spectroscopy_demo, out_dir = out_dir
   default, out_dir, concat_dir( getenv('STX_DEMO_DATA'),'ospex', /d)
 
   ;if the OSPEX demo database folder is not present then create it
-  if ~file_test(out_dir, /directory) then begin
-    file_mkdir, out_dir
-  endif
+  if ~file_test(out_dir, /directory) then $
+    if file_test(getenv('STX_DEMO_DATA'), /dir, /write) then file_mkdir, out_dir $
+    else begin
+      ; But if it's not writable, then use a local, user-specific directory
+      ssw_dir = strjoin([home_dir(),'.ssw', 'so', 'stix'], path_sep())
+      if ~file_test(ssw_dir, /dir, /write) then file_mkdir, ssw_dir
+      out_dir = ssw_dir
+    endelse
 
   ;As an example a spectrogram file for a flare on 8th February 2022 is used
   uid_spec_file = '2202080003'
@@ -95,10 +101,10 @@ pro stx_ospex_spectroscopy_demo, out_dir = out_dir
   print, ' '
   print, 'Press SPACE to continue'
   print, ' '
-
+  pause
+  
   ;The fit interval selected for this demonstration covers one minute over the first non-thermal peak
   spex_fit_time_interval = ['8-Feb-2022 21:38:59.937', '8-Feb-2022 21:40:00.437']
-
 
 
   ;*************************************** FLARE LOCATION **************************************
