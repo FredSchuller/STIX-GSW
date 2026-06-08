@@ -10,7 +10,11 @@ stix_personal_startup*
 dev/.project
 iunit/.project
 lldp/**/.project
+.project
 
+# ignore personal IDL stuff
+stix/idl/fred
+stix/idl/my_util
 
 # ignore the fpga data folder
 fpga
