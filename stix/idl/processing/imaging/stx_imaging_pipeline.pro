@@ -69,7 +69,7 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
                                imsize=imsize, pixel=pixel, x_ptg=x_ptg, y_ptg=y_ptg, force_sas=force_sas, no_sas=no_sas, $
                                subc_labels=subc_labels, no_small=no_small, method=method, $
                                w_clean=w_clean, clean_beam_width=clean_beam_width, set_clean_boxes=set_clean_boxes, $
-                               path_sci_file=path_sci_file
+                               path_sci_file=path_sci_file, reset_systematic=reset_systematic, sumcase=sumcase
 
   if n_params() lt 3 then begin
     print, "STX_IMAGING_PIPELINE"
@@ -81,10 +81,20 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
   endif
 
   ; Input directories - TO BE ADAPTED depending on local installation - FIX ME!
-  aux_data_folder = '/net/galilei/store/data/STIX/L2_FITS_AUX/'
-  l1a_data_folder = '/net/galilei/store/data/STIX/L1_FITS_SCI/'
+  ; aux_data_folder = '/net/galilei/store/data/STIX/L2_FITS_AUX/'
+  ; new version (December 2024)
+;  aux_data_folder = '/net/galilei/store/data/STIX/L2_FITS_ANC/'
+;  l1a_data_folder = '/net/galilei/store/data/STIX/L1_FITS_SCI/'
+  ; to run on hale when galilei is offline:
+  aux_data_folder = '/store/data/STIX/L2_FITS_ANC/'
+  l1a_data_folder = '/store/data/STIX/L1_FITS_SCI/'
+  ; update 2024-10-02
+;;  aux_data_folder = '/work2/fschuller/data/SAS_solution/New_L2_FITS/'
+;
+; ; NEW (2026-02-24), on hypatia:
+;  aux_data_folder = '/work2/fschuller/data/STIX/L2_FITS_ANC/'
+;  l1a_data_folder = '/work2/fschuller/data/STIX/L1_FITS_SCI/'
 
-  
   ; sub-collimator labels
   default, subc_labels, ['10a','10b','10c','9a','9b','9c','8a','8b','8c','7a','7b','7c','6a','6b','6c','5a','5b','5c','4a','4b','4c','3a','3b','3c']
   subc_index = stx_label2ind(subc_labels)
@@ -95,7 +105,7 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
   ; Imaging algorithm to be used: make sure that the method is implemented
   default, method, "MEM"
   method = strupcase(method)
-  known_methods = ["MEM", "EM", "CLEAN"]
+  known_methods = ["MEM", "EM", "CLEAN", "FF"]
   tst = where(known_methods eq method, i_tst)
   if ~i_tst then begin
     print, method, format='("Method ",A," not known. Please use one of the following:")'
@@ -144,11 +154,11 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
   ; If an aspect solution is given as input, then use that one:
   if keyword_set(x_ptg) and keyword_set(y_ptg) then begin
     ; we still need to call stx_create_auxiliary_data to get RSUN, L0 and B0 ...
-    aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, /silent)
+    aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, /silent, reset_systematic=reset_systematic)
     ; ... but overwrite pointing terms with user input
     aux_data.stx_pointing[0] = x_ptg
     aux_data.stx_pointing[1] = y_ptg
-  endif else aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, force_sas=force_sas, no_sas=no_sas)
+  endif else aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, force_sas=force_sas, no_sas=no_sas, reset_systematic=reset_systematic)
 
   ;;;;
   ; Read and process STIX L1A data
@@ -157,7 +167,7 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
      else path_sci_file = l1a_file_list[0]
   print, " STX_IMAGING_PIPELINE - INFO: Found L1(A) file "+path_sci_file
 
-  if keyword_set(bkg_uid) then begin
+  if keyword_set(bkg_uid) then if bkg_uid ne 0 then begin
     l1a_file_list = file_search(l1a_data_folder + '*' + bkg_uid + '*.fits')
     if l1a_file_list[0] eq '' then message,"Could not find any data for UID "+bkg_uid $
        else path_bkg_file = l1a_file_list[0]
@@ -165,6 +175,8 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
 
   ; If not given, try to estimate the location of the source from the data
   !p.background=0
+;  pause
+    
   if not keyword_set(xy_flare) then begin
     stx_estimate_flare_location, path_sci_file, time_range, aux_data, $
                                  flare_loc=xy_flare, energy_range=energy_range, subc_index=subc_index
@@ -182,9 +194,12 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
   ; to be called depend on the imaging algorithm.
   
   if method eq "EM" then begin
-    pixel_data_summed = stx_construct_pixel_data_summed(path_sci_file, time_range, energy_range, path_bkg_file=path_bkg_file)
+    pixel_data_summed = stx_construct_pixel_data_summed(path_sci_file, time_range, energy_range, $
+                                                        path_bkg_file=path_bkg_file, $
+                                                        sumcase=sumcase, subc_index=subc_index)
 
-    out_map = stx_em(pixel_data_summed, aux_data, imsize=imsize, pixel=pixel,mapcenter=mapcenter, xy_flare=xy_flare)
+    out_map = stx_em(pixel_data_summed, aux_data, imsize=imsize, pixel=pixel, mapcenter=mapcenter, $
+                     xy_flare=xy_flare, subc_index=subc_index)
 
   endif else begin
     ; Compute calibrated visibilities
@@ -192,9 +207,22 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
       vis = stx_construct_calibrated_visibility(path_sci_file, time_range, energy_range, mapcenter, subc_index=subc_index, $
       path_bkg_file=path_bkg_file, xy_flare=flare_loc, /no_small, sumcase='TOP+BOT') $
     else vis = stx_construct_calibrated_visibility(path_sci_file, time_range, energy_range, mapcenter, subc_index=subc_index, $
-      path_bkg_file=path_bkg_file, xy_flare=flare_loc)
+      path_bkg_file=path_bkg_file, xy_flare=flare_loc, sumcase=sumcase)
 
     case method of
+      "FF": begin
+        conf = ['circle','circle']
+;        vis_uncertain = 0
+;        conf = "ellipse"
+        vis_uncertain = 1
+        
+        print, "configuration = ", conf
+        print, "vis_uncertain = ", vis_uncertain
+        out_map = stx_vis_fwdfit_pso(conf, vis, aux_data, imsize=imsize, pixel=pixel, uncertain=vis_uncertain, $
+                                     srcstr = srcstr, fitsigmas =fitsigmas)                                             
+        out_map = add_tag(out_map, srcstr, "src_param")
+        out_map = add_tag(out_map, fitsigmas, "src_param_unc")
+      end
       "MEM": out_map = stx_mem_ge(vis,imsize,pixel,aux_data,total_flux=max(abs(vis.obsvis)), /silent)
       "CLEAN": begin
         default, w_clean, 1  ; 1 = uniform weighting, 0 = natural weighting

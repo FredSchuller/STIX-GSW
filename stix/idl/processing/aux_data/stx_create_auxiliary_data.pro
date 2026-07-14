@@ -39,9 +39,11 @@
 ;    2023-05-25, A. F. Battaglia (FHNW, Switzerland): added a few keywords for returing header informations of the FITS file
 ;    2023-10-06, FSc (AIP): also allow input fits_path to be a list of (two) strings, to deal with cases where a change of day
 ;                           in the time range requires to read two files
+;    2024-09-23, FSc (AIP): added optional keyword reset_systematic
 ;-
 function stx_create_auxiliary_data, fits_path, time_range, force_sas=force_sas, no_sas=no_sas, silent=silent, $
-  primary_header = primary_header, data_header = data_header, control_header= control_header, idb_version_header = idb_version_header
+  primary_header = primary_header, data_header = data_header, control_header= control_header, idb_version_header = idb_version_header, $
+  reset_systematic=reset_systematic
 
   default, force_sas, 0
   default, no_sas, 0
@@ -178,6 +180,17 @@ ROT_PITCH = -YAW * sin(ROLL_ANGLE * !dtor) + PITCH * cos(ROLL_ANGLE * !dtor)
 
 readcol, loc_file( 'Mapcenter_correction_factors.csv', path = getenv('STX_SAS') ), $
   avg_shift_x, avg_shift_y, offset_x, offset_y, /silent
+
+ ;;;;;;;
+ ; 2023-07-27: reset (avg_shift_x, avg_shift_y) to (0,0) in order to measure it again
+ ; with a larger sample of events
+  ; 2024-09-23: added a keyword to optionally reset these parameters
+  if keyword_set(reset_systematic) then begin
+      avg_shift_x = 0.  &  avg_shift_y = 0.   ; commented out 2023-08-31
+    ; also reset (offset_X, offset_Y)
+    offset_X = 0.  &  offset_Y = 0.
+  endif
+
 
 spacecraft_pointing = [avg_shift_x,avg_shift_y] + [ROT_YAW, ROT_PITCH]
 STX_POINTING = spacecraft_pointing

@@ -24,9 +24,10 @@
 ; MODIFICATION HISTORY:
 ;    2022-01-07: F. Schuller (AIP, Germany): created
 ;    2023-02-21, FSc (AIP): added hlon, hlat as optional outputs
+;    2025-11-19, FSc (AIP): added optional argument c_col
 ;
 ;-
-pro fit_map_2dgauss, in_map, do_plot=do_plot, hlon=hlon, hlat=hlat, gauss_X=gauss_X, gauss_Y=gauss_Y
+pro fit_map_2dgauss, in_map, do_plot=do_plot, hlon=hlon, hlat=hlat, gauss_X=gauss_X, gauss_Y=gauss_Y, c_col=c_col
   ; Dimensions of the map array
   if not is_struct(in_map) then begin
     print,"ERROR: input variable is not a structure."
@@ -52,6 +53,6 @@ pro fit_map_2dgauss, in_map, do_plot=do_plot, hlon=hlon, hlat=hlat, gauss_X=gaus
     ; arrays of X and Y coordinates
     x_map = in_map.xc + in_map.dx*(indgen(nbX)-nbX/2.)
     y_map = in_map.yc + in_map.dy*(indgen(nbY)-nbY/2.)
-    contour, res, x_map, y_map, levels=max(res)*[0.25,0.5,0.75], /overplot
+    contour, res, x_map, y_map, levels=max(res)*[0.25,0.5,0.75], /overplot, c_col=c_col, thick=2
   endif
 end
