@@ -44,3 +44,6 @@ stx_scenario_*
 
 .vscode
 
+# macOS metadata
+.DS_Store
+
